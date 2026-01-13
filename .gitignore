@@ -16,3 +16,7 @@ ollama-linux-amd64.tgz.1
 ollama.service
 myenv/
 **__pycache__/**
+
+
+__pycache__/
+*.pyc
