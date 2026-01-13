@@ -77,6 +77,17 @@ def main():
     # Sidebar for settings
     with st.sidebar:
         st.title("🦙 Llama Translator Settings")
+        
+        # Warn if IBM_MODEL_ID is set (overrides dropdown)
+        import os
+        ibm_model_id = os.getenv("IBM_MODEL_ID")
+        if ibm_model_id:
+            st.warning(
+                f"⚠️ **Model Override Active**\n\n"
+                f"Your `.env` file has `IBM_MODEL_ID={ibm_model_id}` set.\n\n"
+                f"This overrides the dropdown selection. To use the dropdown, remove or comment out `IBM_MODEL_ID` in your `.env` file."
+            )
+        
         model_name = st.selectbox("Choose a model", Config.AVAILABLE_MODELS)
 
         source_lang = st.selectbox(
