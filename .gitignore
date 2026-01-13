@@ -1,2 +1,16 @@
 
 .env
+bin/
+lib/
+include/
+local/
+pyvenv.cfg
+pip-wheel-metadata/
+share/
+*.pyc
+*.pyo
+*.pyd
+*.pyw
+*.pyz
+ollama-linux-amd64.tar.gz
+ollama.service
