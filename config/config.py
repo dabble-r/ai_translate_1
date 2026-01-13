@@ -14,9 +14,11 @@ class Config:
     HOSTED_API_KEY = os.getenv("HOSTED_API_KEY")
     LOCAL_BASE_URL = os.getenv("LOCAL_BASE_URL")
 
-    # IBM Cloud endpoint (example of adding a new endpoint)
+    # IBM Watson X endpoint configuration
     IBM_BASE_URL = os.getenv("IBM_BASE_URL")
     IBM_API_KEY = os.getenv("IBM_API_KEY")
+    IBM_PROJECT_ID = os.getenv("IBM_PROJECT_ID")
+    IBM_MODEL_ID = os.getenv("IBM_MODEL_ID")  # Actual IBM model ID (e.g., "meta-llama/llama-3-70b-instruct")
 
     # Available models
     AVAILABLE_MODELS = [

@@ -3,3 +3,4 @@ openai
 requests
 Pillow
 python-dotenv
+ibm-watsonx-ai

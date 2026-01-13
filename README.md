@@ -23,3 +23,49 @@ meta-llama3.1-boilerplate/
 ├── README.md
 └── requirements.txt
 ```
+
+## API Request Sample
+
+```from ibm_cloud_sdk_core.authenticators import IAMAuthenticator
+from <sdk-package-name>.example_service_v1 import *
+
+# Create the authenticator.
+authenticator = IAMAuthenticator('myapikey')
+
+# Construct the service instance.
+service = ExampleServiceV1(authenticator=authenticator)
+
+# Use 'service' to invoke operations.
+```
+
+## Expected Response 
+```
+{
+  "access_token": "eyJhbGciOiJIUz......sgrKIi8hdFs",
+  "refresh_token": "not_supported",
+  "ims_user_id": 118...90,
+  "token_type": "Bearer",
+  "expires_in": 3600,
+  "expiration": 1473188353,
+  "scope": "ibm openid"
+}
+```
+
+## Bearer Token
+```
+from ibm_cloud_sdk_core.authenticators import BearerTokenAuthenticator
+
+authenticator = BearerTokenAuthenticator(<your_bearer_token>)
+service = ExampleService(authenticator=authenticator)
+
+# after getting a new access token...
+service.get_authenticator().set_bearer_token('54321');
+```
+
+## Basic Authenticator 
+```
+from ibm_cloud_sdk_core.authenticators import BasicAuthenticator
+
+authenticator = BasicAuthenticator(<your_username>, <your_password>)
+service = ExampleService(authenticator=authenticator)
+```
