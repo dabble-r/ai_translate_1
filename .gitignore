@@ -12,5 +12,6 @@ share/
 *.pyd
 *.pyw
 *.pyz
-ollama-linux-amd64.tar.gz
+ollama-linux-amd64.tgz.1
 ollama.service
+myenv/
