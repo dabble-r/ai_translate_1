@@ -19,5 +19,5 @@ class Config:
         "meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo",
         "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo",
         "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
-        "llama3.1",
+        "llama3.1:8b",
     ]
