@@ -8,12 +8,20 @@ def get_api_config(model_name):
     
     """
     Get API base URL and API key based on the model name.
+    
+    To add a new endpoint:
+    1. Add variables to .env file (e.g., NEW_ENDPOINT_URL, NEW_ENDPOINT_KEY)
+    2. Add properties to Config class (e.g., Config.NEW_ENDPOINT_URL)
+    3. Add elif condition here to return the new endpoint
     """
     if model_name.startswith("meta-llama/"):
         return Config.HOSTED_BASE_URL, Config.HOSTED_API_KEY
     elif model_name == "llama3.1:8b":
         print("local model selected")
         return Config.LOCAL_BASE_URL, None
+    elif model_name.startswith("ibm"):
+        # Example: IBM Cloud endpoint
+        return Config.IBM_BASE_URL, Config.IBM_API_KEY
     else:
         raise ValueError(f"Invalid model name: {model_name}")
 
@@ -111,15 +119,32 @@ def handle_local_request(base_url, model_name, messages, container):
 def stream_response(messages, container, model_name):
     """
     This function handles the API request based on the model (hosted or local) and streams the response.
+    
+    To add support for a new endpoint:
+    1. Update get_api_config() to return the new endpoint URL and key
+    2. Add a condition here to handle the new endpoint
+    3. Use handle_hosted_request() for OpenAI-compatible APIs
+    4. Use handle_local_request() for Ollama-compatible APIs
+    5. Or create a custom handler for unique API formats
     """
     base_url, api_key = get_api_config(model_name)
 
     if model_name.startswith("meta-llama/"):
+        # OpenAI-compatible API
         client = OpenAI(api_key=api_key, base_url=base_url)
         return handle_hosted_request(client, model_name, messages, container)
     elif model_name == "llama3.1:8b":
+        # Ollama-compatible API
         print("url:", base_url)
         print("model_name:", model_name)
         return handle_local_request(base_url, model_name, messages, container)
+    elif model_name.startswith("ibm"):
+        # Example: IBM Cloud endpoint (custom handler may be needed)
+        # For now, try OpenAI-compatible format
+        if api_key:
+            client = OpenAI(api_key=api_key, base_url=base_url)
+            return handle_hosted_request(client, model_name, messages, container)
+        else:
+            return handle_local_request(base_url, model_name, messages, container)
     else:
         raise ValueError("Unsupported model selected.")
