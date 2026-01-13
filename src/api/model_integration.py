@@ -1,6 +1,5 @@
 import requests
 import json
-from openai import OpenAI
 from config.config import Config
 
 # IBM Watson X SDK imports
@@ -43,46 +42,29 @@ def get_api_config(model_name):
     """
     Get API base URL and API key based on the model name.
     
+    Supported models:
+    - IBM Watson X: All models in AVAILABLE_MODELS are IBM Watson X models
+    
     To add a new endpoint:
     1. Add variables to .env file (e.g., NEW_ENDPOINT_URL, NEW_ENDPOINT_KEY)
     2. Add properties to Config class (e.g., Config.NEW_ENDPOINT_URL)
     3. Add elif condition here to return the new endpoint
     """
-    if model_name.startswith("meta-llama/"):
-        return Config.HOSTED_BASE_URL, Config.HOSTED_API_KEY, None
-    elif model_name == "llama3.1:8b":
-        print("local model selected")
-        return Config.LOCAL_BASE_URL, None, None
-    elif model_name.startswith("ibm"):
+    # All models use IBM Watson X
+    # Models starting with "intfloat/", "ibm/", "mistral", "mistralai/", "meta-llama/", 
+    # "openai/", "cross-encoder/", "sentence-transformers/", or in IBM_MODELS list use IBM Watson X
+    if (model_name in Config.IBM_MODELS or 
+        model_name.startswith("ibm") or 
+        model_name.startswith("intfloat/") or
+        model_name.startswith("mistral") or
+        model_name.startswith("meta-llama/") or
+        model_name.startswith("openai/") or
+        model_name.startswith("cross-encoder/") or
+        model_name.startswith("sentence-transformers/")):
         # IBM Watson X endpoint - returns (base_url, api_key, project_id)
-        # Note: model_id is handled separately in handle_ibm_watsonx_request
         return Config.IBM_BASE_URL, Config.IBM_API_KEY, Config.IBM_PROJECT_ID
     else:
-        raise ValueError(f"Invalid model name: {model_name}")
-
-
-def handle_hosted_request(client, model_name, messages, container):
-    """
-    Handles the hosted Llama 3.1 model requests via OpenAI's API.
-    """
-    try:
-        stream = client.chat.completions.create(
-            model=model_name,
-            messages=messages,
-            stream=True,
-        )
-        response_placeholder = container.empty()
-        full_response = ""
-        for chunk in stream:
-            if chunk.choices[0].delta.content is not None:
-                full_response += chunk.choices[0].delta.content
-                response_placeholder.markdown(full_response + "▌")
-        response_placeholder.markdown(full_response)
-        return full_response
-    except Exception as e:
-        error_message = f"API Error: {str(e)}"
-        container.error(error_message)
-        return None
+        raise ValueError(f"Invalid model name: {model_name}. Only IBM Watson X models are supported.")
 
 
 def handle_local_request(base_url, model_name, messages, container):
@@ -198,7 +180,20 @@ def handle_ibm_watsonx_request(base_url, api_key, project_id, model_name, messag
             return None
         
         # Determine the actual IBM model ID to use
+        # If IBM_MODEL_ID is set, use it; otherwise use the model_name directly
         actual_model_id = Config.IBM_MODEL_ID if Config.IBM_MODEL_ID else model_name
+        
+        # For models that match IBM's format, use the model_name as-is
+        # This includes meta-llama/, intfloat/, ibm/, mistral/, openai/, cross-encoder/, sentence-transformers/ models
+        if (model_name.startswith("meta-llama/") or 
+            model_name.startswith("intfloat/") or 
+            model_name.startswith("ibm/") or
+            model_name.startswith("mistral") or
+            model_name.startswith("openai/") or
+            model_name.startswith("cross-encoder/") or
+            model_name.startswith("sentence-transformers/")) and not Config.IBM_MODEL_ID:
+            # Use the model_name as-is, it should match IBM's format
+            actual_model_id = model_name
         
         if not actual_model_id:
             container.error("IBM Model ID is required. Please set IBM_MODEL_ID in your .env file or ensure model_name is set.")
@@ -231,9 +226,13 @@ def handle_ibm_watsonx_request(base_url, api_key, project_id, model_name, messag
         credentials = Credentials(url=base_url, api_key=api_key)
         client = APIClient(credentials=credentials, project_id=project_id)
         
-        # Initialize ModelInference
-        params = {"project_id": project_id, "max_tokens": 1000, "time_limit": 1000}
-        model_inference = ModelInference(model_id=actual_model_id, params=params, client=client)
+        # Prepare parameters for chat completion
+        # Note: Reduce max_tokens and time_limit if getting timeout errors
+        params = {
+            "project_id": project_id,
+            "max_tokens": 500,  # Reduced from 1000 to avoid timeouts
+            "time_limit": 500  # Reduced from 1000 to avoid timeouts
+        }
         
         response_placeholder = container.empty()
         response_placeholder.info("🔄 Processing request...")
@@ -241,7 +240,15 @@ def handle_ibm_watsonx_request(base_url, api_key, project_id, model_name, messag
         
         # Use the SDK's chat method
         try:
-            # Try chat completion with SDK
+            # Initialize ModelInference - it requires either 'credentials' or 'api_client'
+            # Pass the api_client (which is the APIClient instance)
+            model_inference = ModelInference(
+                model_id=actual_model_id,
+                params=params,
+                api_client=client
+            )
+            
+            # Call chat method
             response = model_inference.chat(messages=formatted_messages, params=params)
             
             # Handle response - SDK may return different formats
@@ -263,7 +270,51 @@ def handle_ibm_watsonx_request(base_url, api_key, project_id, model_name, messag
                 return None
                 
         except Exception as e:
-            container.error(f"IBM Watson X SDK error: {str(e)}")
+            error_str = str(e)
+            
+            # Check if it's a model not supported error
+            if "not supported" in error_str.lower() and "supported models" in error_str.lower():
+                # Extract available models from error message
+                import re
+                models_match = re.search(r"Supported models: \[(.*?)\]", error_str)
+                if models_match:
+                    available_models_str = models_match.group(1)
+                    # Parse the list of models
+                    available_models = [m.strip().strip("'\"") for m in available_models_str.split(",")]
+                    
+                    # Filter for similar models (meta-llama models)
+                    similar_models = [m for m in available_models if "meta-llama" in m.lower() or "llama" in m.lower()]
+                    
+                    error_message = f"Model '{actual_model_id}' is not available in your IBM Watson X environment.\n\n"
+                    error_message += f"**Available Meta-Llama models:**\n"
+                    for model in similar_models[:10]:  # Show first 10
+                        error_message += f"- {model}\n"
+                    
+                    if len(similar_models) > 10:
+                        error_message += f"\n... and {len(similar_models) - 10} more models\n"
+                    
+                    error_message += f"\n**Suggested alternatives:**\n"
+                    # Suggest closest matches
+                    if "8b" in actual_model_id.lower():
+                        eight_b_models = [m for m in similar_models if "8b" in m.lower()]
+                        if eight_b_models:
+                            error_message += f"- Try: {eight_b_models[0]}\n"
+                    if "instruct" in actual_model_id.lower():
+                        instruct_models = [m for m in similar_models if "instruct" in m.lower()]
+                        if instruct_models:
+                            error_message += f"- Or: {instruct_models[0]}\n"
+                    
+                    error_message += f"\n**To use a different model:**\n"
+                    error_message += f"1. Update IBM_MODEL_ID in your .env file\n"
+                    error_message += f"2. Or add the model to IBM_MODELS in .env\n"
+                    error_message += f"3. Or select a different model from the dropdown\n"
+                    
+                    container.error(error_message)
+                else:
+                    container.error(f"IBM Watson X SDK error: {error_str}")
+            else:
+                container.error(f"IBM Watson X SDK error: {error_str}")
+            
             print(f"SDK error details: {e}")
             import traceback
             traceback.print_exc()
@@ -301,6 +352,17 @@ def handle_ibm_watsonx_request(base_url, api_key, project_id, model_name, messag
             error_message += "1. Model ID format is correct\n"
             error_message += "2. Messages format is correct\n"
             error_message += "3. Project ID is valid\n"
+        elif "500" in error_str or "internal server error" in error_str or "deadline exceeded" in error_str or "downstream" in error_str:
+            error_message = f"IBM Server Error (500): {str(e)}\n\n"
+            error_message += "This usually means:\n"
+            error_message += "1. The model is timing out or unavailable\n"
+            error_message += "2. The request is too large or complex\n"
+            error_message += "3. The model service is overloaded\n\n"
+            error_message += "Try:\n"
+            error_message += "1. Reduce the input text length\n"
+            error_message += "2. Try a different model\n"
+            error_message += "3. Wait a moment and retry\n"
+            error_message += "4. Check if the model is available in your region\n"
         
         container.error(error_message)
         print(f"IBM Watson X error: {error_message}")
@@ -311,30 +373,31 @@ def handle_ibm_watsonx_request(base_url, api_key, project_id, model_name, messag
 
 def stream_response(messages, container, model_name):
     """
-    This function handles the API request based on the model (hosted or local) and streams the response.
+    This function handles the API request based on the model and streams the response.
+    
+    Supported models:
+    - IBM Watson X: All models in AVAILABLE_MODELS (uses handle_ibm_watsonx_request)
     
     To add support for a new endpoint:
     1. Update get_api_config() to return the new endpoint URL and key
     2. Add a condition here to handle the new endpoint
-    3. Use handle_hosted_request() for OpenAI-compatible APIs
-    4. Use handle_local_request() for Ollama-compatible APIs
-    5. Or create a custom handler for unique API formats
+    3. Or create a custom handler for unique API formats
     """
     base_url, api_key, project_id = get_api_config(model_name)
 
-    if model_name.startswith("meta-llama/"):
-        # OpenAI-compatible API
-        client = OpenAI(api_key=api_key, base_url=base_url)
-        return handle_hosted_request(client, model_name, messages, container)
-    elif model_name == "llama3.1:8b":
-        # Ollama-compatible API
-        print("url:", base_url)
-        print("model_name:", model_name)
-        return handle_local_request(base_url, model_name, messages, container)
-    elif model_name.startswith("ibm"):
-        # IBM Watson X API with bearer token authentication
+    # All models route to IBM Watson X (local Ollama support removed)
+    # Route to IBM Watson X for all supported models
+    if (model_name in Config.IBM_MODELS or 
+        model_name.startswith("ibm") or 
+        model_name.startswith("intfloat/") or
+        model_name.startswith("mistral") or
+        model_name.startswith("meta-llama/") or
+        model_name.startswith("openai/") or
+        model_name.startswith("cross-encoder/") or
+        model_name.startswith("sentence-transformers/")):
+        # IBM Watson X API
         return handle_ibm_watsonx_request(
             base_url, api_key, project_id, model_name, messages, container
         )
     else:
-        raise ValueError("Unsupported model selected.")
+        raise ValueError(f"Unsupported model selected: {model_name}. Only IBM Watson X models are supported.")

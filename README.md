@@ -17,12 +17,30 @@ meta-llama3.1-boilerplate/
 │   │
 │   └── __init__.py
 │
-├── .env
+├── .env (create from env.template)
+├── env.template (template for .env file)
+├── ENV_SETUP_GUIDE.md (detailed setup instructions)
 ├── app.py
 ├── main.py
 ├── README.md
 └── requirements.txt
 ```
+
+## Quick Setup
+
+1. **Copy the environment template:**
+   ```bash
+   cp env.template .env
+   ```
+
+2. **Edit `.env` and add your IBM Watson X credentials:**
+   ```bash
+   IBM_BASE_URL=https://us-south.ml.cloud.ibm.com
+   IBM_API_KEY=your_api_key_here
+   IBM_PROJECT_ID=your_project_id_here
+   ```
+
+3. **See `ENV_SETUP_GUIDE.md` for detailed configuration options**
 
 ## API Request Sample
 
