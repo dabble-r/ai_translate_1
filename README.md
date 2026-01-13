@@ -18,8 +18,6 @@ meta-llama3.1-boilerplate/
 │   └── __init__.py
 │
 ├── .env (create from env.template)
-├── env.template (template for .env file)
-├── ENV_SETUP_GUIDE.md (detailed setup instructions)
 ├── app.py
 ├── main.py
 ├── README.md
