@@ -1,3 +1,5 @@
+
+## origin al prompt templates
 def get_translation_prompt(text, source_lang, target_lang, cultural_context):
     """
     Returns a prompt for translating the given text while considering cultural context.
@@ -81,6 +83,7 @@ def get_cultural_reference_explanation_prompt(text, source_lang, target_lang):
     ## :globe_with_meridians: Overall Cultural Context
     [Summarize the cultural differences relevant to this text.]
     """
+
 def get_interactive_translation_prompt(text, source_lang, target_lang):
     """
     Returns a prompt for providing an interactive, detailed translation with context.
@@ -106,3 +109,46 @@ def get_interactive_translation_prompt(text, source_lang, target_lang):
     - **Connotations**: :green[Positive/Negative connotations of the translation]
     - **Cultural Significance**: :orange[Explain the cultural impact or relevance of the translation]
     """
+
+## education oriented prompt templates
+def get_language_standards(text, source_lang, target_lang):
+    pass 
+
+def get_grammar_focus(text, source_lang, target_lang):
+    """
+    Builds a structured prompt for translation, verb/tense comparison,
+    and cross-linguistic grammar analysis.
+    """
+    return f"""
+        You are a multilingual translation and grammar expert.
+
+        Your task is to:
+        1. Translate the text from **{source_lang}** to **{target_lang}**.
+        2. Identify and explain the key **verbs**, **tenses**, and **grammatical structures** in the source text.
+        3. Compare how those same verbs/tenses/structures are expressed in the target language.
+        4. Highlight any cultural or contextual nuances that influence the translation.
+
+        Text to analyze:
+        "{text}"
+
+        Respond in the following markdown structure (optimized for Streamlit):
+
+        ## :blue[Translation]
+        > Provide the full translation here.
+
+        ## :orange[Verb & Tense Comparison]
+        List each important verb or grammatical structure from the source text and compare it to the target language.
+
+        Format each item like this:
+        - **Source**: ":violet[original phrase]"
+        - **Target**: ":rainbow[translated verb/structure]"
+        - **Tense/Aspect**: Describe the tense/aspect in both languages.
+        - **Explanation**: Briefly explain why this tense/structure is used in each language and how they differ.
+
+        ## :red[Linguistic Analysis]
+        - **Register**: Formal, informal, neutral, etc.
+        - **Tone**: Describe the tone in both languages.
+        - **Structural Differences**: Key grammar differences between {source_lang} and {target_lang}.
+        - **Cultural Considerations**: Any cultural or contextual elements that shaped the translation.
+        - **Challenges**: Note any tricky grammar, idioms, or tense mismatches.
+        """

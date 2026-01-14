@@ -23,9 +23,9 @@ def get_watsonx_client(model_id, project_id=None):
     base_url = os.getenv("IBM_BASE_URL")
     project_id = project_id or os.getenv("IBM_PROJECT_ID")
     
-    print("key: ", api_key)
-    print("base_url: ", base_url)
-    print("project_id: ", project_id)
+    # print("key: ", api_key)
+    # print("base_url: ", base_url)
+    # print("project_id: ", project_id)
     
     if not api_key or not base_url or not project_id:
         raise ValueError("Missing required environment variables: IBM_API_KEY, IBM_BASE_URL, IBM_PROJECT_ID")

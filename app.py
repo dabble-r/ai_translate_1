@@ -5,6 +5,7 @@ from src.utils.prompt_templates import (
     get_sentiment_analysis_prompt,
     get_cultural_reference_explanation_prompt,
     get_interactive_translation_prompt,
+    get_grammar_focus,
 )
 from config.config import Config
 
@@ -90,11 +91,15 @@ def main():
         
         model_name = st.selectbox("Choose a model", Config.AVAILABLE_MODELS)
 
+        langs = ["English", "Spanish", "French", "German", "Japanese"]
         source_lang = st.selectbox(
-            "From", ["English", "Spanish", "French", "German", "Japanese"]
+            "From", langs
         )
+
+        selected = source_lang
+
         target_lang = st.selectbox(
-            "To", ["Spanish", "English", "French", "German", "Japanese"]
+            "To", [lang for lang in langs if lang != selected]
         )
         cultural_context = st.selectbox(
             "Context", ["Formal", "Casual", "Business", "Youth Slang", "Poetic"]
@@ -115,12 +120,13 @@ def main():
         if st.button("Translate and Analyze", type="primary"):
             if text:
                 # Tabs for different analysis types
-                tab1, tab2, tab3, tab4 = st.tabs(
+                tab1, tab2, tab3, tab4, tab5 = st.tabs(
                     [
                         "Translation",
                         "Sentiment Analysis",
                         "Cultural References",
                         "Interactive Translation",
+                        "Grammar Focus",
                     ]
                 )
 
@@ -171,6 +177,18 @@ def main():
                     interactive_translation = stream_response(
                         [{"role": "user", "content": interactive_prompt}],
                         interactive_container,
+                        model_name,
+                    )
+                # Tab 5: Grammar Focus
+                with tab5:
+                    st.subheader("Grammar")
+                    grammar_container = st.empty()
+                    grammar_prompt = get_grammar_focus(
+                        text, source_lang, target_lang
+                    )
+                    grammar_analysis = stream_response(
+                        [{"role": "user", "content": grammar_prompt}],
+                        grammar_container,
                         model_name,
                     )
 
