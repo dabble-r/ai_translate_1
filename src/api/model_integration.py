@@ -8,7 +8,7 @@ import streamlit as st
 load_dotenv()
 
 
-def get_watsonx_client(model_id, project_id=None):
+def get_watsonx_client(model_id, params, project_id=None):
     """
     Create and return a Watson X ModelInference client.
     
@@ -45,15 +45,11 @@ def get_watsonx_client(model_id, project_id=None):
         model_id=model_id,
         credentials=creds,
         project_id=project_id,
-        params={
-            "decoding_method": "greedy",
-            "max_new_tokens": 200,
-            "temperature": 0
-        }
+        params=params
     )
 
 
-def chat_with_watsonx(messages, model_id, container):
+def chat_with_watsonx(messages, model_id, container, params):
     """
     Send a chat request to Watson X and display the response.
     
@@ -71,7 +67,7 @@ def chat_with_watsonx(messages, model_id, container):
         response_placeholder.info("🔄 Processing request...")
         
         # Get client
-        model = get_watsonx_client(model_id)
+        model = get_watsonx_client(model_id, params)
         
         # Format messages for Watson X chat API
         formatted_messages = []
@@ -132,7 +128,7 @@ def chat_with_watsonx(messages, model_id, container):
         return None
 
 
-def stream_response(messages, container, model_name):
+def stream_response(messages, container, model_name, params):
     """
     Main entry point for streaming responses.
     Routes to Watson X chat.
@@ -148,4 +144,4 @@ def stream_response(messages, container, model_name):
     # Determine actual model ID (check for override in env)
     actual_model_id = os.getenv("IBM_MODEL_ID") or model_name
     
-    return chat_with_watsonx(messages, actual_model_id, container)
+    return chat_with_watsonx(messages, actual_model_id, container, params)

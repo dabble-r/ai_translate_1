@@ -1,5 +1,5 @@
 
-## origin al prompt templates
+## origin prompt templates
 def get_translation_prompt(text, source_lang, target_lang, cultural_context):
     """
     Returns a prompt for translating the given text while considering cultural context.
@@ -18,10 +18,6 @@ def get_translation_prompt(text, source_lang, target_lang, cultural_context):
     - **Adaptation 1**: [Explanation]
     - **Adaptation 2**: [Explanation]
     [Add more adaptations as needed]
-
-    ## :orange[Alternative Phrasings]
-    1. ":violet[Original phrase]" → ":rainbow[Alternative 1]", ":rainbow[Alternative 2]"
-       - _Context_: [Explain when to use each alternative]
 
     ## :red[Linguistic Analysis]
     - **Register**: [Formal/Informal/etc.]
@@ -140,6 +136,50 @@ def get_grammar_focus(text, source_lang, target_lang):
         List each important verb or grammatical structure from the source text and compare it to the target language.
 
         Format each item like this:
+        - **Source**: ":violet[original phrase]"
+        - **Target**: ":rainbow[translated verb/structure]"
+        - **Tense/Aspect**: Describe the tense/aspect in both languages.
+        - **Explanation**: Briefly explain why this tense/structure is used in each language and how they differ.
+
+        ## :red[Linguistic Analysis]
+        - **Register**: Formal, informal, neutral, etc.
+        - **Tone**: Describe the tone in both languages.
+        - **Structural Differences**: Key grammar differences between {source_lang} and {target_lang}.
+        - **Cultural Considerations**: Any cultural or contextual elements that shaped the translation.
+        - **Challenges**: Note any tricky grammar, idioms, or tense mismatches.
+        """
+
+# testing new prompt (ed streamlit project)
+def get_comms_focus(text, source_lang, target_lang):
+    """
+    Builds a structured prompt for translation, verb/tense comparison,
+    and cross-linguistic grammar analysis.
+    """
+    return f"""
+        You are a multilingual translation assistant and grammar expert.
+
+        Your task is to:
+        1. Translate the text from **{source_lang}** to **{target_lang}**.
+        2. Identify and explain the key **verbs**, **tenses**, and **grammatical structures** in the source text.
+        3. Compare how those same verbs/tenses/structures are expressed in the target language (if applicable).
+        4. Highlight any cultural or contextual nuances that influence the translation.
+
+        Text to analyze:
+        "{text}"
+
+        Respond in the following markdown structure (optimized for Streamlit):
+
+        ## :blue[Translation]
+        > Provide the full translation here.
+
+        ## :orange[Verb & Tense Comparison]
+        List each important verb or grammatical structure from the source text and compare it to the target language.
+
+        Format each item like this:
+        | **Source**      | **Target**      | **Tense/Aspect** | **Explanation** |
+        |    :----:       |    :----:       |     :----:       |     :----:      |
+        | -----------     | -----------     |  -----------     |    -----------  |
+
         - **Source**: ":violet[original phrase]"
         - **Target**: ":rainbow[translated verb/structure]"
         - **Tense/Aspect**: Describe the tense/aspect in both languages.

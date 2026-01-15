@@ -6,6 +6,7 @@ from src.utils.prompt_templates import (
     get_cultural_reference_explanation_prompt,
     get_interactive_translation_prompt,
     get_grammar_focus,
+    get_comms_focus,
 )
 from config.config import Config
 
@@ -15,7 +16,7 @@ def setup_page():
     Sets up the page with custom styles and page configuration.
     """
     st.set_page_config(
-        page_title="Advanced Llama 3.1 Cultural Translator",
+        page_title="Advanced Translator",
         layout="wide",
         initial_sidebar_state="expanded",
     )
@@ -56,8 +57,8 @@ def main():
     st.markdown(
         """
         <div style="text-align: center;">
-            <h1 class="header-title">🦙 Meta-Llama 3.1 Cultural Translator</h1>
-            <p class="header-subtitle">Powered by Meta's advanced language models</p>
+            <h1 class="header-title">🦙 Translator</h1>
+            <p class="header-subtitle">Powered by IBM Watson X language models</p>
         </div>
         """,
         unsafe_allow_html=True,
@@ -67,7 +68,7 @@ def main():
     st.markdown(
         """
         <div class="logo-container">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/7/7b/Meta_Platforms_Inc._logo.svg" alt="Meta Logo">
+            <img src="https://www.translatedright.com/wp-content/uploads/2021/10/why-you-shouldnt-use-google-translate-for-business-1-scaled-2560x1280.jpg" alt="Translation Logo">
         </div>
         """,
         unsafe_allow_html=True,
@@ -77,7 +78,7 @@ def main():
 
     # Sidebar for settings
     with st.sidebar:
-        st.title("🦙 Llama Translator Settings")
+        st.title("🦙 Settings")
         
         # Warn if IBM_MODEL_ID is set (overrides dropdown)
         import os
@@ -91,7 +92,26 @@ def main():
         
         model_name = st.selectbox("Choose a model", Config.AVAILABLE_MODELS)
 
+        decoding = st.selectbox("Choose Method", ["greedy", "sampling"])
+
+        tokens = st.number_input("Choose Number of Tokens", value=200, min_value=100, max_value=1000) 
+
+        temperature = st.slider("Choose Temperature", value=0.5, min_value=0.1, max_value=1.0, step=0.1)
+
+        top_k = st.number_input("Choose Top K", value=50, min_value=10, max_value=100)
+
+        top_p = st.slider("Choose Top P", value=0.5, min_value=0.1, max_value=1.0, step=0.1)
+
+        params = {
+            "decoding_method": decoding,
+            "max_new_tokens": tokens,
+            "temperature": temperature,
+            "top_k": top_k,
+            "top_p": top_p
+        }
+
         langs = ["English", "Spanish", "French", "German", "Japanese"]
+
         source_lang = st.selectbox(
             "From", langs
         )
@@ -107,6 +127,7 @@ def main():
 
     # Main container with border
     main_container = st.container(border=True)
+    session_results = {"session": None, "results": None}
 
     with main_container:
         st.header("Enter Text for Translation and Analysis")
@@ -120,19 +141,18 @@ def main():
         if st.button("Translate and Analyze", type="primary"):
             if text:
                 # Tabs for different analysis types
-                tab1, tab2, tab3, tab4, tab5 = st.tabs(
+                tab1, tab2, tab5, tab6 = st.tabs(
                     [
                         "Translation",
                         "Sentiment Analysis",
-                        "Cultural References",
-                        "Interactive Translation",
                         "Grammar Focus",
+                        "Comms Companion"
                     ]
                 )
 
                 # Tab 1: Translation
                 with tab1:
-                    st.subheader("Translation Result")
+                    st.subheader("Result")
                     translation_container = st.empty()
                     translation_prompt = get_translation_prompt(
                         text, source_lang, target_lang, cultural_context
@@ -141,8 +161,9 @@ def main():
                         [{"role": "user", "content": translation_prompt}],
                         translation_container,
                         model_name,
+                        params
                     )
-
+                    session_results["results"]["translation"] = translation
                 # Tab 2: Sentiment Analysis
                 with tab2:
                     st.subheader("Sentiment Analysis")
@@ -152,9 +173,11 @@ def main():
                         [{"role": "user", "content": sentiment_prompt}],
                         sentiment_container,
                         model_name,
+                        params
                     )
+                    session_results["results"]["sentiment_analysis"] = sentiment_analysis
 
-                # Tab 3: Cultural References
+                '''# Tab 3: Cultural References
                 with tab3:
                     st.subheader("Cultural References")
                     cultural_container = st.empty()
@@ -166,8 +189,9 @@ def main():
                         cultural_container,
                         model_name,
                     )
+                '''
 
-                # Tab 4: Interactive Translation
+                '''# Tab 4: Interactive Translation
                 with tab4:
                     st.subheader("Interactive Translation")
                     interactive_container = st.empty()
@@ -178,7 +202,8 @@ def main():
                         [{"role": "user", "content": interactive_prompt}],
                         interactive_container,
                         model_name,
-                    )
+                    )'''
+
                 # Tab 5: Grammar Focus
                 with tab5:
                     st.subheader("Grammar")
@@ -190,17 +215,44 @@ def main():
                         [{"role": "user", "content": grammar_prompt}],
                         grammar_container,
                         model_name,
+                        params
                     )
+                    session_results["results"]["grammar_analysis"] = grammar_analysis
+
+                # Tab 6: Teacher Comms Companion
+                with tab6:
+                    st.subheader("Companion")
+                    comms_container = st.empty()
+                    comms_prompt = get_comms_focus(
+                        text, source_lang, target_lang
+                    )
+                    comms_analysis = stream_response(
+                        [{"role": "user", "content": comms_prompt}],
+                        comms_container,
+                        model_name,
+                        params
+                    )
+                    session_results["results"]["comms_analysis"] = comms_analysis
 
     # Sidebar for additional information and feedback
     with st.sidebar:
         st.subheader("About")
         st.info("This app demonstrates Meta's Llama 3.1 capabilities.")
+    
+    # Sidebar for session summary 
+    with st.sidebar:
+        import datetime
+        st.subheader("Session")
+        
+        session_results["session"] = params.copy()
+        session_results["session"]["model"] = model_name
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        session_results["session"]["timestamp"] = timestamp 
+        session_results["session"]["lang"] = {"source": source_lang, "target": target_lang, "cultural_context": cultural_context}
 
-        st.subheader("Feedback")
-        feedback = st.text_area("Leave your feedback here", height=100)
-        if st.button("Submit Feedback"):
-            st.success("Thank you for your feedback!")
+        session_results["results"] = session_results["results"]
+
+        st.json(session_results)
 
 
 if __name__ == "__main__":
