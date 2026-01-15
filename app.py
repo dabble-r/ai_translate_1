@@ -127,7 +127,9 @@ def main():
 
     # Main container with border
     main_container = st.container(border=True)
-    session_results = {"session": None, "results": None}
+
+    # sidebar results output
+    session_results = {"session": None, "results": None, "score": None}
 
     with main_container:
         st.header("Enter Text for Translation and Analysis")
@@ -163,7 +165,14 @@ def main():
                         model_name,
                         params
                     )
-                    session_results["results"]["translation"] = translation
+                    ret_trans = None
+                    try: 
+                        translation = [el for el in translation.split("\n") if el != "" and el != " " and "[" not in el]
+                        ret_trans = translation
+                        print("ret_trans_try: ", ret_trans["body"])
+                    except Exception as e:
+                        print("ret_trans_except: ", e)
+
                 # Tab 2: Sentiment Analysis
                 with tab2:
                     st.subheader("Sentiment Analysis")
@@ -175,7 +184,13 @@ def main():
                         model_name,
                         params
                     )
-                    session_results["results"]["sentiment_analysis"] = sentiment_analysis
+                    try: 
+                        sentiment = [el for el in sentiment_analysis.split("\n") if el != "" and el != " " and "[" not in el]
+                        ret_sentiment = sentiment
+                        #print("sentiment output: ", sentiment)
+                    except Exception as e:
+                        print("error: ", e)
+                        ret_sentiment = "Error: " + str(e)
 
                 '''# Tab 3: Cultural References
                 with tab3:
@@ -217,7 +232,13 @@ def main():
                         model_name,
                         params
                     )
-                    session_results["results"]["grammar_analysis"] = grammar_analysis
+                    try:
+                        grammar = [el for el in grammar_analysis.split("\n") if el != "" and el != " " and "[" not in el]
+                        ret_grammar = grammar
+                        print("grammar output: ", grammar)
+                    except Exception as e:
+                        print("error: ", e)
+                        ret_grammar = "Error: " + str(e)
 
                 # Tab 6: Teacher Comms Companion
                 with tab6:
@@ -232,7 +253,20 @@ def main():
                         model_name,
                         params
                     )
-                    session_results["results"]["comms_analysis"] = comms_analysis
+                    try:
+                        comms = [el for el in comms_analysis.split("\n") if el != "" and el != " " and "[" not in el]
+                        ret_comms = comms
+                        #print("comms output: ", comms)
+                    except Exception as e:
+                        print("error: ", e)
+                        ret_comms = "Error: " + str(e)
+
+                    session_results["results"] = {
+                        "translation": ret_trans,
+                        "sentiment": ret_sentiment,
+                        "grammar": ret_grammar,
+                        "comms": ret_comms
+                    }
 
     # Sidebar for additional information and feedback
     with st.sidebar:
@@ -243,16 +277,19 @@ def main():
     with st.sidebar:
         import datetime
         st.subheader("Session")
-        
+
+        score = st.number_input("Session Score", value=5, min_value=1, max_value=10)
+        session_results["score"] = score
+
         session_results["session"] = params.copy()
         session_results["session"]["model"] = model_name
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         session_results["session"]["timestamp"] = timestamp 
         session_results["session"]["lang"] = {"source": source_lang, "target": target_lang, "cultural_context": cultural_context}
 
-        session_results["results"] = session_results["results"]
-
         st.json(session_results)
+
+        
 
 
 if __name__ == "__main__":

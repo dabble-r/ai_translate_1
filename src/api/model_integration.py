@@ -120,9 +120,9 @@ def chat_with_watsonx(messages, model_id, container, params):
             return None
             
     except Exception as e:
-        error_msg = f"Error: {str(e)}"
+        error_msg = f"Error: {e}"
         container.error(error_msg)
-        print(f"Watson X error: {error_msg}")
+        print(f"Watson X error: {e}")
         import traceback
         traceback.print_exc()
         return None
